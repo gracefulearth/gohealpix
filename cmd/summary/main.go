@@ -44,6 +44,7 @@ func main() {
 	fmt.Printf("\tNSide: %d\n", hp.FaceSidePixels())
 	fmt.Printf("\tFace Pixels: %d\n", hp.FacePixels())
 	fmt.Printf("\tTotal Pixels: %d\n", hp.Pixels())
+	fmt.Printf("\tHierarchical Pixels: %d\n", hp.HierarchicalPixels())
 	fmt.Printf("\tPolar Region Pixels: %d\n", hp.PolarRegionPixels())
 	fmt.Printf("\tRings: %d\n", hp.Rings())
 	fmt.Printf("\tAngular Resolution: %.18f radians\n", hp.AngularResolution())

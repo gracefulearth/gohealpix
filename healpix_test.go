@@ -36,7 +36,7 @@ func TestHealpixPixels(t *testing.T) {
 		name   string
 		order  int
 		nside  int
-		pixels uint
+		pixels int
 	}{
 		{"0 order = 1 nside = 12 pixels", 0, 1, 12},
 		{"1 order = 2 nside = 48 pixels", 1, 2, 48},
@@ -112,5 +112,25 @@ func TestHealpixPolarRegionPixels(t *testing.T) {
 				t.Errorf("Side config expected polar pixels %v, got %v instead", tc.polar, hpn.PolarRegionPixels())
 			}
 		})
+	}
+}
+
+func TestHealpixPropertiesMonotonic(t *testing.T) {
+	lastPixels := 0
+	lastHierPixels := 0
+	for order := range MaxOrder() {
+		hp := New(NewHealpixOrder(order))
+		if lastPixels == 0 {
+			lastPixels = hp.Pixels()
+			lastHierPixels = hp.HierarchicalPixels()
+			continue
+		}
+
+		if hp.Pixels() <= lastPixels {
+			t.Errorf("Pixels not monotonic increasing: order %d has %d pixels, last was %d", order, hp.Pixels(), lastPixels)
+		}
+		if hp.HierarchicalPixels() <= lastHierPixels {
+			t.Errorf("Hierarchical pixels not monotonic increasing: order %d has %d hierarchical pixels, last was %d", order, hp.HierarchicalPixels(), lastHierPixels)
+		}
 	}
 }

@@ -109,8 +109,12 @@ func New(base HealpixBase) Healpix {
 }
 
 // Returns the total number of pixels in the HEALPix map.
-func (o Healpix) Pixels() uint {
-	return 12 * uint(o.FacePixels())
+func (o Healpix) Pixels() int {
+	return 12 * o.FacePixels()
+}
+
+func (o Healpix) HierarchicalPixels() int {
+	return int(NestPixel(o.Pixels()-1).ToUniquePixel(o)) + 1
 }
 
 // Returns the number of pixels in each (north or south) polar region.

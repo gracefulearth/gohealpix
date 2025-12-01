@@ -10,7 +10,7 @@ func TestFirstIndex(t *testing.T) {
 		name     string
 		order    HealpixOrder
 		ringId   int
-		fstIndex uint
+		fstIndex int
 	}{
 		{"Ring 0 @ order 0 = 0 index", 0, 0, 0},
 		{"Ring 1 @ order 0 = 4 index", 0, 1, 4},

@@ -2,7 +2,7 @@ package healpix
 
 // Given a desired coordinate on a healpix map, return the pixel index of
 // of the desired neighbor pixel of in the selected HEALPix numbering scheme.
-func Neighbor(hp Healpix, scheme HealpixScheme, where Where, xo int, yo int) uint {
+func Neighbor(hp Healpix, scheme HealpixScheme, where Where, xo int, yo int) int {
 	fp := where.ToFacePixel(hp)
 	maxXY := hp.FaceSidePixels() - 1
 
@@ -53,12 +53,12 @@ func Neighbor(hp Healpix, scheme HealpixScheme, where Where, xo int, yo int) uin
 // Given a desired coordinate on a healpix map, return the pixel indices
 // of each neighbor pixel of the selected coordinate in the HEALPix index
 // scheme desired.
-func Neighbors(hp Healpix, where Where, scheme HealpixScheme) []uint {
+func Neighbors(hp Healpix, where Where, scheme HealpixScheme) []int {
 	fp := where.ToFacePixel(hp)
 	maxXY := hp.FaceSidePixels() - 1
 
 	if fp.x > 0 && fp.x < maxXY && fp.y > 0 && fp.y < maxXY {
-		result := make([]uint, 8)
+		result := make([]int, 8)
 		// pixel not on face boundary
 		// highest probability branch in higher resolutions
 		// TODO: nested can be even faster here as a special case, doesn't have to go through FacePixel first
@@ -76,7 +76,7 @@ func Neighbors(hp Healpix, where Where, scheme HealpixScheme) []uint {
 	// pixel is on an edge boundary, we need to be cognizant of
 	// special corner pixels and edge index swapping
 
-	result := []uint{}
+	result := []int{}
 	iterLen := 9
 	// account for special pixels that only have 7 neighbors
 	if fp.face < 8 && fp.x == maxXY && fp.y == maxXY {

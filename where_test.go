@@ -179,7 +179,7 @@ func TestNestPixelUniquePixel(t *testing.T) {
 		{"Max order: max nest pixel = max unique pixel",
 			NewHealpixOrder(MaxOrder()),
 			NestPixel(New(NewHealpixOrder(MaxOrder())).Pixels() - 1),
-			UniquePixel(New(NewHealpixOrder(MaxOrder())).Pixels() - 1 + 4*uint(MaxNSide())*uint(MaxNSide()))},
+			UniquePixel(New(NewHealpixOrder(MaxOrder())).Pixels() - 1 + 4*MaxNSide()*MaxNSide())},
 	}
 
 	for _, tc := range testCases {
@@ -335,7 +335,7 @@ func TestConversionInverses(t *testing.T) {
 
 	// ring pixels to ring coordinate is perfectly invertible
 	ringPixelToRingCoordInvertible := func(ringPixel RingPixel) bool {
-		if ringPixel >= RingPixel(hp.Pixels()) {
+		if ringPixel < 0 || ringPixel >= RingPixel(hp.Pixels()) {
 			return true
 		}
 		return ringPixel == ringPixel.ToRingCoordinate(hp).ToRingPixel(hp)
@@ -343,7 +343,7 @@ func TestConversionInverses(t *testing.T) {
 
 	// ring coordinate to face pixel is perfectly invertible
 	ringCoordToFacePixelInvertible := func(ringPixel RingPixel) bool {
-		if ringPixel >= RingPixel(hp.Pixels()) {
+		if ringPixel < 0 || ringPixel >= RingPixel(hp.Pixels()) {
 			return true
 		}
 		ringCoord := ringPixel.ToRingCoordinate(hp)
@@ -352,7 +352,7 @@ func TestConversionInverses(t *testing.T) {
 
 	// ring pixels to face pixels is perfectly invertible
 	ringPixelToFacePixelInvertible := func(ringPixel RingPixel) bool {
-		if ringPixel >= RingPixel(hp.Pixels()) {
+		if ringPixel < 0 || ringPixel >= RingPixel(hp.Pixels()) {
 			return true
 		}
 		return ringPixel == ringPixel.ToFacePixel(hp).ToRingPixel(hp)
@@ -360,7 +360,7 @@ func TestConversionInverses(t *testing.T) {
 
 	// nested pixels to face pixels is perfectly invertible
 	nestPixelToFacePixelInvertible := func(nestPixel NestPixel) bool {
-		if nestPixel >= NestPixel(hp.Pixels()) {
+		if nestPixel < 0 || nestPixel >= NestPixel(hp.Pixels()) {
 			return true
 		}
 		return nestPixel == nestPixel.ToFacePixel(hp).ToNestPixel(hp)
@@ -368,7 +368,7 @@ func TestConversionInverses(t *testing.T) {
 
 	// ring pixels to nest pixels is perfectly invertible
 	nestPixelToRingPixelInvertible := func(nest NestPixel) bool {
-		if nest >= NestPixel(hp.Pixels()) {
+		if nest < 0 || nest >= NestPixel(hp.Pixels()) {
 			return true
 		}
 		return nest == nest.ToRingPixel(hp).ToNestPixel(hp)
@@ -376,7 +376,7 @@ func TestConversionInverses(t *testing.T) {
 
 	// nest pixels to position is perfectly invertible
 	nestPixelToSphereCoordinateInvertible := func(nest NestPixel) bool {
-		if nest >= NestPixel(hp.Pixels()) {
+		if nest < 0 || nest >= NestPixel(hp.Pixels()) {
 			return true
 		}
 		return nest == nest.ToSphereCoordinate(hp).ToNestPixel(hp)
@@ -406,7 +406,7 @@ func TestNestRingSpherePositionsSame(t *testing.T) {
 	hp := New(NewHealpixOrder(MaxOrder()))
 
 	nestRingSpherePositionsSame := func(nest NestPixel) bool {
-		if nest >= NestPixel(hp.Pixels()) {
+		if nest < 0 || nest >= NestPixel(hp.Pixels()) {
 			return true
 		}
 		ring := nest.ToRingPixel(hp)

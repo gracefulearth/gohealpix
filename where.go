@@ -20,12 +20,12 @@ type Where interface {
 	ToProjectionCoordinate(Healpix) ProjectionCoordinate // Convert the index to an x/y position on the planar HEALPix projection of the sphere.
 	ToSphereCoordinate(Healpix) SphereCoordinate         // Convert the index to a latitude/longitude position on the sphere.
 
-	PixelId(Healpix, HealpixScheme) uint // Convert the index into an equivalent index for the given HEALPix pixel numbering scheme.
+	PixelId(Healpix, HealpixScheme) int // Convert the index into an equivalent index for the given HEALPix pixel numbering scheme.
 }
 
 // The index of a pixel in a HEALPix map using a 'quad-tree' division counting scheme that makes
 // nearest neighbor searches more efficient.
-type NestPixel uint
+type NestPixel int
 
 // Identity function on NestPixel to satisfy the Where interface.
 func (p NestPixel) ToNestPixel(hp Healpix) NestPixel {
@@ -43,21 +43,21 @@ func (p NestPixel) ToRingPixel(hp Healpix) RingPixel {
 func (p NestPixel) ToFacePixel(hp Healpix) FacePixel {
 	// the 12 faces store pixels in linear ranges, i.e. face 0 = 0 - n, face 1 = n - 2n, etc.
 	// so we know which face we have by simply dividing by n = number of pixels per face
-	face := int(uint(p) / uint(hp.FacePixels()))
+	face := int(p) / hp.FacePixels()
 	// we can get the index of the pixel within the face by simple remainder
-	facePixelId := uint(p) % uint(hp.FacePixels())
+	facePixelId := int(p) % hp.FacePixels()
 
 	// x and y are the compressed even and odd bits of facePixelId respectively
 	x := 0
 	y := 0
 	// thanks Google
-	intBits := uint(32) << (^uint(0) >> 63)
+	intBits := 32 << (^uint(0) >> 63)
 	// iteratively compress
-	for i := uint(0); i < intBits/2; i++ {
-		xMask := uint(1 << (i * 2))                // even shifting
-		yMask := uint(1 << ((i * 2) + 1))          // odd shifting
-		x |= int((xMask & facePixelId) >> i)       // compress the correct amount each iteration
-		y |= int((yMask & facePixelId) >> (i + 1)) // need to account for the odd offset in compression
+	for i := 0; i < intBits/2; i++ {
+		xMask := 1 << (i * 2)                 // even shifting
+		yMask := 1 << ((i * 2) + 1)           // odd shifting
+		x |= (xMask & facePixelId) >> i       // compress the correct amount each iteration
+		y |= (yMask & facePixelId) >> (i + 1) // need to account for the odd offset in compression
 	}
 	return FacePixel{x, y, face}
 }
@@ -74,21 +74,21 @@ func (p NestPixel) ToProjectionCoordinate(hp Healpix) ProjectionCoordinate {
 	return p.ToFacePixel(hp).ToProjectionCoordinate(hp)
 }
 
-func (p NestPixel) PixelId(hp Healpix, scheme HealpixScheme) uint {
+func (p NestPixel) PixelId(hp Healpix, scheme HealpixScheme) int {
 	if scheme == NestScheme {
-		return uint(p)
+		return int(p)
 	}
-	return uint(p.ToRingPixel(hp))
+	return int(p.ToRingPixel(hp))
 }
 
 // The index of a pixel in a HEALPix map in nested numbering, combined with the order of the HEALPix map resolution.
 // Useful for indexing in multiresolution HEALPix maps.
-type UniquePixel uint
+type UniquePixel int
 
 func (p UniquePixel) ToNestPixel(hp Healpix) NestPixel {
-	logged := bits.Len(uint(p)/4) - 1                      // integer version of floor(log2(p/4))
-	nside := uint(1) << int(math.Floor(float64(logged)/2)) // 2 ^ floor(log2(p/4)/2)
-	nest := uint(p) - 4*nside*nside
+	logged := bits.Len(uint(p)/4) - 1                // integer version of floor(log2(p/4))
+	nside := 1 << int(math.Floor(float64(logged)/2)) // 2 ^ floor(log2(p/4)/2)
+	nest := int(p) - 4*nside*nside
 	return NestPixel(nest)
 }
 
@@ -116,12 +116,12 @@ func (p UniquePixel) ToSphereCoordinate(hp Healpix) SphereCoordinate {
 	return p.ToNestPixel(hp).ToSphereCoordinate(hp)
 }
 
-func (p UniquePixel) PixelId(hp Healpix, scheme HealpixScheme) uint {
+func (p UniquePixel) PixelId(hp Healpix, scheme HealpixScheme) int {
 	return p.ToNestPixel(hp).PixelId(hp, scheme)
 }
 
 // The index of a pixel in a HEALPix map counting ring-wise down from the north pole.
-type RingPixel uint
+type RingPixel int
 
 func (p RingPixel) RingId(hp Healpix) int {
 	return int(p)
@@ -145,30 +145,30 @@ func (p RingPixel) ToFacePixel(hp Healpix) FacePixel {
 
 func (p RingPixel) ToRingCoordinate(hp Healpix) RingCoordinate {
 	// three cases: north polar cap, equatorial region, south polar cap
-	if uint(p) < uint(hp.PolarRegionPixels()) {
+	if int(p) < hp.PolarRegionPixels() {
 		pH := float64(int(p)+1) / float64(2)
 		ringInd := int(math.Sqrt(pH - math.Sqrt(math.Floor(pH))))
 		return RingCoordinate{
 			ringInd,
-			int(uint(p) - uint(2*(ringInd+1)*ringInd)),
+			int(p) - 2*(ringInd+1)*ringInd,
 		}
-	} else if uint(p) < hp.Pixels()-uint(hp.PolarRegionPixels()) {
-		pE := uint(p) - uint(hp.PolarRegionPixels())
+	} else if int(p) < hp.Pixels()-hp.PolarRegionPixels() {
+		pE := int(p) - hp.PolarRegionPixels()
 		ringInd := int(float64(pE)/(4*float64(hp.FaceSidePixels()))) + hp.FaceSidePixels() - 1
 		return RingCoordinate{
 			ringInd,
-			int(pE % (4 * uint(hp.FaceSidePixels()))),
+			pE % (4 * hp.FaceSidePixels()),
 		}
 	} else {
 		// very similar to north polar cap, but some indices are inverted to account for counting
 		// backwards from south pole as if it were zero
-		nP := hp.Pixels() - uint(p) - 1
+		nP := hp.Pixels() - int(p) - 1
 		pH := float64(nP+1) / float64(2)
 		northRingInd := int(math.Sqrt(pH-math.Sqrt(math.Floor(pH)))) + 1
 		ringInd := hp.Rings() - northRingInd
 		return RingCoordinate{
 			ringInd,
-			int(uint(2*(northRingInd+1)*northRingInd) - 1 - nP),
+			2*(northRingInd+1)*northRingInd - 1 - nP,
 		}
 	}
 }
@@ -181,11 +181,11 @@ func (p RingPixel) ToProjectionCoordinate(hp Healpix) ProjectionCoordinate {
 	return p.ToRingCoordinate(hp).ToFacePixel(hp).ToProjectionCoordinate(hp)
 }
 
-func (p RingPixel) PixelId(hp Healpix, scheme HealpixScheme) uint {
+func (p RingPixel) PixelId(hp Healpix, scheme HealpixScheme) int {
 	if scheme == RingScheme {
-		return uint(p)
+		return int(p)
 	}
-	return uint(p.ToNestPixel(hp))
+	return int(p.ToNestPixel(hp))
 }
 
 // Describes a HEALPix pixel as a combination of ring number and pixel-from-start-of-ring. The ring pixel numbering
@@ -220,19 +220,19 @@ func (p RingCoordinate) ToUniquePixel(hp Healpix) UniquePixel {
 
 func (p RingCoordinate) ToRingPixel(hp Healpix) RingPixel {
 	ring := NewRing(hp, p.ring)
-	return RingPixel(ring.FirstIndex() + uint(p.pixelInRing))
+	return RingPixel(ring.FirstIndex() + p.pixelInRing)
 }
 
 func (p RingCoordinate) ToFacePixel(hp Healpix) FacePixel {
 	ring := NewRing(hp, p.ring)
 	faceInd := 0
 	nr := ring.northIndex + 1
-	if ring.FirstIndex() < uint(hp.PolarRegionPixels()) {
+	if ring.FirstIndex() < hp.PolarRegionPixels() {
 		faceInd = p.pixelInRing / nr
 		if faceInd < 0 {
 			panic(fmt.Sprintf("uh oh north, %d || %d || %d || %d", p.pixelInRing, faceInd, ring.FirstIndex(), hp.PolarRegionPixels()))
 		}
-	} else if ring.FirstIndex() < hp.Pixels()-uint(hp.PolarRegionPixels()) {
+	} else if ring.FirstIndex() < hp.Pixels()-hp.PolarRegionPixels() {
 		nr = hp.FaceSidePixels()
 		ire := (p.ring + 1) - hp.FaceSidePixels() + 1
 		irm := hp.FaceSidePixels()*2 + 2 - ire
@@ -299,11 +299,11 @@ func (p RingCoordinate) ToSphereCoordinate(hp Healpix) SphereCoordinate {
 	}
 }
 
-func (p RingCoordinate) PixelId(hp Healpix, scheme HealpixScheme) uint {
+func (p RingCoordinate) PixelId(hp Healpix, scheme HealpixScheme) int {
 	if scheme == RingScheme {
-		return uint(p.ToRingPixel(hp))
+		return int(p.ToRingPixel(hp))
 	}
-	return uint(p.ToNestPixel(hp))
+	return int(p.ToNestPixel(hp))
 }
 
 // Describes a discrete HEALPix pixel using the 'face' (base pixel) in which the pixel belongs, and it's relative
@@ -411,11 +411,11 @@ func (p FacePixel) ToSphereCoordinate(hp Healpix) SphereCoordinate {
 	return p.ToRingCoordinate(hp).ToSphereCoordinate(hp)
 }
 
-func (p FacePixel) PixelId(hp Healpix, scheme HealpixScheme) uint {
+func (p FacePixel) PixelId(hp Healpix, scheme HealpixScheme) int {
 	if scheme == RingScheme {
-		return uint(p.ToRingPixel(hp))
+		return int(p.ToRingPixel(hp))
 	}
-	return uint(p.ToNestPixel(hp))
+	return int(p.ToNestPixel(hp))
 }
 
 // Represents a position on a HEALPix sphere projected into the standard HEALPix projection on a 2D plane.
@@ -492,11 +492,11 @@ func (p ProjectionCoordinate) ToSphereCoordinate(hp Healpix) SphereCoordinate {
 	return NewLatLonCoordinate(lat, lon)
 }
 
-func (p ProjectionCoordinate) PixelId(hp Healpix, scheme HealpixScheme) uint {
+func (p ProjectionCoordinate) PixelId(hp Healpix, scheme HealpixScheme) int {
 	if scheme == RingScheme {
-		return uint(p.ToRingPixel(hp))
+		return int(p.ToRingPixel(hp))
 	}
-	return uint(p.ToNestPixel(hp))
+	return int(p.ToNestPixel(hp))
 }
 
 // A position on the sphere represented by two components, the latitude (0 at equator and +/- Pi/2 at poles)
@@ -562,9 +562,9 @@ func (p SphereCoordinate) ToSphereCoordinate(hp Healpix) SphereCoordinate {
 	return p
 }
 
-func (p SphereCoordinate) PixelId(hp Healpix, scheme HealpixScheme) uint {
+func (p SphereCoordinate) PixelId(hp Healpix, scheme HealpixScheme) int {
 	if scheme == RingScheme {
-		return uint(p.ToRingPixel(hp))
+		return int(p.ToRingPixel(hp))
 	}
-	return uint(p.ToNestPixel(hp))
+	return int(p.ToNestPixel(hp))
 }
