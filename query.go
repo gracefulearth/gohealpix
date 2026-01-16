@@ -1,4 +1,4 @@
-package healpix
+package gohealpix
 
 // Given a desired coordinate on a healpix map, return the pixel index of
 // of the desired neighbor pixel of in the selected HEALPix numbering scheme.

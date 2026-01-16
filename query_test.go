@@ -1,4 +1,4 @@
-package healpix
+package gohealpix
 
 import (
 	"testing"
