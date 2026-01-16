@@ -5,7 +5,7 @@ import (
 	"math"
 	"math/bits"
 
-	"github.com/owlpinetech/flatsphere"
+	"github.com/gracefulearth/flatsphere"
 )
 
 // An interface for converting between different indexing schemes and accessing the desired

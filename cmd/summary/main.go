@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/owlpinetech/healpix"
+	healpix "github.com/gracefulearth/gohealpix"
 )
 
 func main() {
